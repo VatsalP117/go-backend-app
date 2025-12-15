@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/VatsalP117/go-backend-app/internal/config"
+	"github.com/clerk/clerk-sdk-go/v2"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog/log"
@@ -23,6 +24,10 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config) *Server {
+	// Step 0: Initialize Clerk SDK globally
+	clerk.SetKey(cfg.ClerkSecretKey)
+
+	
 	e := echo.New()
 
 	// 1. HIde the startup banner (so we have cleaner logs)
