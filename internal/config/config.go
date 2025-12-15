@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Port string
 	ClerkSecretKey string
+	DatabaseURL string
 }
 
 func Load() *Config {
@@ -25,6 +26,7 @@ func Load() *Config {
 	cfg := &Config{
 		Port: getEnv("PORT", "8080"),// Default to 8080 if PORT is not set
 		ClerkSecretKey: getEnv("CLERK_SECRET_KEY",""),
+		DatabaseURL: getEnv("DATABASE_URL",""),
 	}
 
 
@@ -32,6 +34,10 @@ func Load() *Config {
 	// Crash the app if critical keys are missing
 	if cfg.ClerkSecretKey == "" {
 		log.Fatal("Error: CLERK_SECRET_KEY is required but not set")
+	}
+
+	if cfg.DatabaseURL == "" {
+		log.Fatal("Error: DATABASE_URL is required but not set")
 	}
 
 	return cfg

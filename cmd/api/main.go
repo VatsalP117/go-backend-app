@@ -4,34 +4,36 @@ import (
 	"log"
 
 	"github.com/VatsalP117/go-backend-app/internal/config"
+	"github.com/VatsalP117/go-backend-app/internal/database"
 	"github.com/VatsalP117/go-backend-app/internal/handlers" // We will create this next
 	"github.com/VatsalP117/go-backend-app/internal/middleware"
 	"github.com/VatsalP117/go-backend-app/internal/server"
 )
 
 func main() {
-	// 1. Load Configuration
 	cfg := config.Load()
 
-	// 2. Initialize Server (Echo + Clerk Global Key)
+	// 1. Initialize Database
+	db, err := database.New(cfg.DatabaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// Defer closing the connection until the app stops
+	defer db.Close()
+	log.Println("Connected to Database!")
+
 	srv := server.NewServer(cfg)
-
-	// 3. Initialize Internal Components
 	authMiddleware := middleware.New()
-	userHandler := handlers.NewUserHandler()
-
-	// 4. Register Routes
-	// We group routes by prefix for cleaner URLs
-	api := srv.Echo.Group("/api")
-
-	// Protected Routes (Require Clerk Token)
-	protected := api.Group("/v1")
-	protected.Use(authMiddleware.RequireAuth) // <--- The Gatekeeper
 	
-	// Map the URL to the Handler Function
+	// 2. Pass the DB to the Handler
+	// We need to update NewUserHandler to accept the DB (see Step 6)
+	userHandler := handlers.NewUserHandler(db) 
+
+	api := srv.Echo.Group("/api")
+	protected := api.Group("/v1")
+	protected.Use(authMiddleware.RequireAuth)
 	protected.GET("/profile", userHandler.GetProfile)
 
-	// 5. Start the Server
 	if err := srv.Start(); err != nil {
 		log.Fatal(err)
 	}

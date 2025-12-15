@@ -3,40 +3,39 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/VatsalP117/go-backend-app/internal/database"
 	"github.com/labstack/echo/v4"
 )
 
 type UserHandler struct {
 	// In the future, you will add your Database Service here.
-	// DB *database.Service
+	DB *database.Service
 }
 
 // NewUserHandler initializes the handler
-func NewUserHandler() *UserHandler {
-	return &UserHandler{}
+func NewUserHandler(db *database.Service) *UserHandler {
+	return &UserHandler{
+		DB: db,
+	}
 }
 
-// GetProfile responds with the authenticated user's details
 func (h *UserHandler) GetProfile(c echo.Context) error {
-	// 1. Retrieve the User ID from the context
-	// We set this in the middleware using c.Set("user_id", ...)
-	userID, ok := c.Get("user_id").(string)
+	userID := c.Get("user_id").(string)
+
+	// --- DATABASE CHECK (The new part) ---
+	// Let's pretend we have a 'users' table. 
+	// We check if the database is alive by running a simple query.
 	
-	// Safety check: This should never happen if the middleware is running,
-	// but it's good defensive programming.
-	if !ok {
-		return c.JSON(http.StatusInternalServerError, map[string]string{
-			"error": "Failed to retrieve user ID",
-		})
+	var currentTime string
+	// QueryRow executes a query that is expected to return at most one row.
+	err := h.DB.Db.QueryRow("SELECT NOW()").Scan(&currentTime)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database query failed"})
 	}
 
-	// 2. (Future) Fetch user details from your database using userID
-	// user := h.DB.FindUser(userID)
-
-	// 3. Return the JSON response
 	return c.JSON(http.StatusOK, map[string]interface{}{
-		"id":      userID,
-		"message": "Successfully fetched profile data",
-		"role":    "admin", // Dummy data
+		"id":        userID,
+		"db_time":   currentTime, // Proof that DB is working!
+		"message":   "Connected to Postgres successfully",
 	})
 }
